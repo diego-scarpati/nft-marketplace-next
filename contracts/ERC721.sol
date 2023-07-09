@@ -1,18 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract ERC721 {
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 indexed tokenId
-    );
+import "./ERC165.sol";
+import "./interfaces/IERC721.sol";
 
-    event Approval(
-        address indexed owner,
-        address indexed approved,
-        uint256 indexed tokenId
-    );
+contract ERC721 is ERC165, IERC721 {
 
     // Mapping from token id to the owner
     mapping(uint256 => address) private _tokenOwner;
@@ -23,12 +15,17 @@ contract ERC721 {
     // Mapping from token id to approved addresses
     mapping(uint256 => address) private _tokenApprovals;
 
+    constructor() {
+        _registerInterface(bytes4(keccak256('balanceOf(bytes4)')^
+        keccak256('ownerOf(bytes4)')^keccak256('transferFrom(bytes4)')));
+    }
+
     /// @notice Count all NFTs assigned to an owner
     /// @dev NFTs assigned to the zero address are considered invalid, and this
     ///  function throws for queries about the zero address.
     /// @param _owner An address for whom to query the balance
     /// @return The number of NFTs owned by `_owner`, possibly zero
-    function balanceOf(address _owner) public view returns (uint256) {
+    function balanceOf(address _owner) public view override returns (uint256) {
         require(_owner != address(0), "The address must not be 0");
         return _ownedTokensCount[_owner];
     }
@@ -92,12 +89,12 @@ contract ERC721 {
         emit Transfer(_from, _to, _tokenId);
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public {
+    function transferFrom(address from, address to, uint256 tokenId) external payable override {
         require(isApprovedOrOwner(msg.sender, tokenId), "Is not the owner");
         _transferFrom(from, to, tokenId);
     }
 
-    function approve(address to, uint256 tokenId) public {
+    function approve(address to, uint256 tokenId) external payable override {
         address owner = ownerOf(tokenId);
         require(owner != to, "Trying to approve the current owner");
         require(msg.sender == owner, "Current caller is not the owner of the token");
